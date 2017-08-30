@@ -1,0 +1,22 @@
+spring:
+ kafka:
+  bootstrap-servers: localhost:9092
+  topics-to-check: topic1, topic2, topic3
+
+---
+
+spring:
+ profiles: test
+ name: test
+ kafka:
+  bootstrap-servers: localhost:9092
+  topics-to-check: topic1
+
+logging:
+ file: target/kafka-partitions-checker.log
+ pattern:
+  file: "%d %-5level [%thread] %logger.%M %L : %msg%n"
+ level:
+  org.springframework: ERROR
+  org.apache.zookeeper: WARN
+  kafka: WARN
