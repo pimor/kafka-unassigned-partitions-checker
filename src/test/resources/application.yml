@@ -1,0 +1,13 @@
+spring:
+  kafka:
+    bootstrap-servers: ${spring.embedded.kafka.brokers}
+    topics-to-check: topic1, topic2, topic3
+
+logging:
+ file: target/kafka-partitions-checker.log
+ pattern:
+  file: "%d %-5level [%thread] %logger.%M %L : %msg%n"
+ level:
+  org.springframework: ERROR
+  org.apache.zookeeper: WARN
+  kafka: WARN
