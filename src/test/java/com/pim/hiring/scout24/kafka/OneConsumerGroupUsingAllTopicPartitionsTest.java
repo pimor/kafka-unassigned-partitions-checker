@@ -2,7 +2,6 @@ package com.pim.hiring.scout24.kafka;
 
 import com.pim.hiring.scout24.kafka.checker.UnassignedTopicPartitions;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.TopicPartition;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -34,9 +33,9 @@ import java.util.Map;
 @RunWith(SpringRunner.class)
 @SpringBootTest(properties = "scheduling.enabled=false")
 @DirtiesContext
-public class TestOneConsumerGroupUsingSomeTopicPartitions {
+public class OneConsumerGroupUsingAllTopicPartitionsTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TestOneConsumerGroupUsingSomeTopicPartitions.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(OneConsumerGroupUsingAllTopicPartitionsTest.class);
 
     private static String TOPIC_NAME = "topic1";
 
@@ -56,11 +55,11 @@ public class TestOneConsumerGroupUsingSomeTopicPartitions {
     @Autowired
     private KafkaListenerEndpointRegistry kafkaListenerEndpointRegistry;
 
-    // Create 3 partitions topic
+    // Create 2 partitions topic
     @ClassRule
-    public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, 3, TOPIC_NAME);
+    public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, 2, TOPIC_NAME);
 
-    KafkaConsumer<String, String> kconsumer = null;
+    private KafkaConsumer<String, String> kconsumer;
 
 
     @Before
@@ -90,27 +89,24 @@ public class TestOneConsumerGroupUsingSomeTopicPartitions {
                     embeddedKafka.getPartitionsPerTopic());
         }
 
-        template.send(TOPIC_NAME, 0, "123");
 
         /////////////////////////////////////
         // Consumer set up
         /////////////////////////////////////
         kconsumer = new KafkaConsumer<String, String>( (Map)consumerConfigs.get("consumerConfigs") );
-        TopicPartition partition0 = new TopicPartition(TOPIC_NAME, 0);
-        kconsumer.assign( Arrays.asList(partition0) );
+        kconsumer.subscribe( Arrays.asList(TOPIC_NAME) );
         kconsumer.poll(2000);
-        kconsumer.committed(partition0);
         kconsumer.close();
     }
 
 
     @Test
-    public void testOneConsumerGroupUsingSomeTopicPartitions() throws Exception {
+    public void testOneConsumerGroupUsingAllTopicPartitions() throws Exception {
         UnassignedTopicPartitions checker = new UnassignedTopicPartitions();
+
 
         Map<String, Map<String, List<Integer>>> topicConsumerGroupConsumerPartitions =
                 checker.getTopicAndPartitionsForAllConsumerGroups( checker.createKafkaAdminClient(bootstrapServers) );
-
 
         // Find topic partitions that are not configured in the consumer
         for(Map.Entry<String, Map<String, List<Integer>>> topicConsumerGroupConsumerEntry : topicConsumerGroupConsumerPartitions.entrySet()) {
@@ -119,7 +115,7 @@ public class TestOneConsumerGroupUsingSomeTopicPartitions {
             Map<String, List<Integer>> topicPartitionsList =
                     checker.getTopicPartitionsInfo(template, topicConsumerGroupConsumerEntry.getValue().keySet().iterator().next());
 
-            Assert.assertFalse( checker.comparePartitionLists(topicPartitionsList, topicConsumerGroupConsumerEntry) );
+            Assert.assertTrue( checker.comparePartitionLists(topicPartitionsList, topicConsumerGroupConsumerEntry) );
         }
     }
 
